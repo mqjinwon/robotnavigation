@@ -4,6 +4,7 @@
 #include "mainframe.h"
 #include "ui_mainframe.h"
 #include "imageform.h"
+#include "AstarAlgorithm.h"
 
 
 MainFrame::MainFrame(QWidget *parent) :
@@ -24,6 +25,7 @@ MainFrame::MainFrame(QWidget *parent) :
     //리스트 출력창을 안보이게    
     ui->listWidget->setVisible(false);
     this->adjustSize();
+
 
     //UI 활성화 갱신
     UpdateUI();
@@ -144,9 +146,56 @@ void MainFrame::on_buttonShowList_clicked()
 
 void MainFrame::on_buttonAStar_clicked()
 {
-     QString stSource = ui->editSourceNode->text();
-     QString stGoad   = ui->editGoalNode->text();
+    ui->listWidget->clear();                                   // erase all list
 
+    QString stSource = ui->editSourceNode->text();
+    QString stGoal   = ui->editGoalNode->text();
+
+    nvimap* opAStar = new nvimap(30);
+
+    opAStar->AddNode(1, 5, "A");    opAStar->AddNode(1, 2, "B");
+    opAStar->AddNode(3, 4, "C");    opAStar->AddNode(3, 6, "D");
+    opAStar->AddNode(2, 7, "E");    opAStar->AddNode(3, 1, "F");
+    opAStar->AddNode(4, 3, "G");    opAStar->AddNode(5, 5, "H");
+    opAStar->AddNode(6, 2, "I");    opAStar->AddNode(7, 0, "J");
+    opAStar->AddNode(8, 3, "K");    opAStar->AddNode(8, 5, "L");
+    opAStar->AddNode(7, 7, "M");    opAStar->AddNode(9, 7, "N");
+    opAStar->AddNode(10, 5, "O");   opAStar->AddNode(9, 1, "P");
+    opAStar->AddNode(10, 3, "Q");
+
+    opAStar->AddNeighbor("A", "B"); opAStar->AddNeighbor("A", "C"); opAStar->AddNeighbor("A", "E");
+    opAStar->AddNeighbor("B", "F");
+    opAStar->AddNeighbor("C", "B"); opAStar->AddNeighbor("C", "G"); opAStar->AddNeighbor("C", "H");
+    opAStar->AddNeighbor("D", "C"); opAStar->AddNeighbor("D", "H"); opAStar->AddNeighbor("D", "M");
+    opAStar->AddNeighbor("E", "D"); opAStar->AddNeighbor("E", "M");
+    opAStar->AddNeighbor("F", "I"); opAStar->AddNeighbor("F", "J");
+    opAStar->AddNeighbor("G", "F"); opAStar->AddNeighbor("G", "I");
+    opAStar->AddNeighbor("H", "I"); opAStar->AddNeighbor("H", "K"); opAStar->AddNeighbor("H", "L");
+    opAStar->AddNeighbor("I", "P"); opAStar->AddNeighbor("I", "K");
+    opAStar->AddNeighbor("J", "K"); opAStar->AddNeighbor("J", "P");
+    opAStar->AddNeighbor("K", "P"); opAStar->AddNeighbor("K", "O");
+    opAStar->AddNeighbor("L", "K"); opAStar->AddNeighbor("L", "Q");
+    opAStar->AddNeighbor("M", "L"); opAStar->AddNeighbor("M", "N");
+    opAStar->AddNeighbor("N", "L"); opAStar->AddNeighbor("N", "O");
+    opAStar->AddNeighbor("O", "K"); opAStar->AddNeighbor("O", "Q");
+    opAStar->AddNeighbor("P", "K"); opAStar->AddNeighbor("P", "Q");
+
+    KNODE* result = opAStar->Execute(stSource.toStdString().c_str(), stGoal.toStdString().c_str());
+    string route;
+
+
+    while(1){
+        route += result->szID[0];
+        if(result->opPrvious == nullptr){
+            break;
+        }
+
+        route += " <-- ";
+        result = result->opPrvious;
+
+    }
+
+    ui->listWidget->insertItem(0, QString().sprintf("%s ", route.c_str()));
 
     //UI 활성화 갱신
     UpdateUI();

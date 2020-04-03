@@ -20,11 +20,13 @@ LIBS        += -lopengl32\
                -lwinmm
 
 SOURCES += main.cpp\
+    AstarAlgorithm.cpp \
         mainframe.cpp \
     imageform.cpp \
     kfc.cpp
 
 HEADERS  += mainframe.h \
+    AstarAlgorithm.h \
     imageform.h \
     kfc.h
 

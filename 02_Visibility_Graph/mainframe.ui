@@ -434,7 +434,7 @@
         <enum>QTabWidget::Rounded</enum>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <property name="iconSize">
         <size>
@@ -453,7 +453,7 @@
          <property name="geometry">
           <rect>
            <x>70</x>
-           <y>58</y>
+           <y>60</y>
            <width>141</width>
            <height>31</height>
           </rect>
@@ -536,24 +536,37 @@
           </item>
          </layout>
         </widget>
+        <widget class="QPushButton" name="visibilityMap">
+         <property name="geometry">
+          <rect>
+           <x>70</x>
+           <y>220</y>
+           <width>141</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>make visibilitymap</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="visibilityAstar">
+         <property name="geometry">
+          <rect>
+           <x>70</x>
+           <y>250</y>
+           <width>141</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Run A*</string>
+         </property>
+        </widget>
        </widget>
        <widget class="QWidget" name="tab_2">
         <attribute name="title">
          <string>2 </string>
         </attribute>
-        <widget class="QPushButton" name="pushButton">
-         <property name="geometry">
-          <rect>
-           <x>90</x>
-           <y>150</y>
-           <width>93</width>
-           <height>28</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>PushButton</string>
-         </property>
-        </widget>
        </widget>
        <widget class="QWidget" name="tab">
         <attribute name="title">

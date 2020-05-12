@@ -510,7 +510,7 @@
            <x>71</x>
            <y>36</y>
            <width>139</width>
-           <height>23</height>
+           <height>25</height>
           </rect>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_9">
@@ -576,13 +576,26 @@
          <property name="geometry">
           <rect>
            <x>70</x>
-           <y>130</y>
+           <y>90</y>
            <width>131</width>
            <height>31</height>
           </rect>
          </property>
          <property name="text">
           <string>Voronoi Diagram</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="voronoiAstar">
+         <property name="geometry">
+          <rect>
+           <x>70</x>
+           <y>140</y>
+           <width>131</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Run A*</string>
          </property>
         </widget>
        </widget>

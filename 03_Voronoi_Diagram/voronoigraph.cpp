@@ -7,11 +7,34 @@ VoronoiGraph::VoronoiGraph()
 
 }
 
-KImageGray VoronoiGraph::Execute(int obType, int bfType, int thershold, int scale){
+KImageGray VoronoiGraph::Execute(int obType, int bfType, int threshold, int scale){
     getObstacles(obType);
-    brushFire(bfType, thershold);
+    brushFire(bfType, threshold);
 
     return scaleUp(_BFimg, scale);
+}
+
+bool VoronoiGraph::AddSENeigborTo(const char *szID)
+{
+    JNODE*  opNode  = FindNode(szID);
+    JNODE*  shortNode;
+    int     shortlength = numeric_limits<int>::max();
+
+    // Register neigbor other node
+    for(int i=0; i < navigationMap.size(); i++){
+        if(navigationMap[i]->szID != opNode->szID){
+            int tmplength = Heuristic(opNode->nX, opNode->nY, navigationMap[i]->nX, navigationMap[i]->nY);
+            if (tmplength < shortlength){
+                shortlength = tmplength;
+                shortNode = navigationMap[i];
+            }
+        }
+    }
+
+    nvimap::AddNeighbor(shortNode->szID, szID);
+    nvimap::AddNeighbor(szID, shortNode->szID);
+
+    return true;
 }
 
 Obstacles VoronoiGraph::getObstacles(int type){
@@ -107,16 +130,19 @@ Obstacles VoronoiGraph::getObstacles(int type){
 
     // 이미지의 꼭지점들도 장애물로 인식함
     obs->push_back(make_pair(0,0));
-    _Obstacles.push_back(*obs);
+
 
     obs = new Obstacle;
     obs->push_back(make_pair(_igMap.Row()-1,0));
 
+
     obs = new Obstacle;
     obs->push_back(make_pair(0,_igMap.Col()-1));
 
+
     obs = new Obstacle;
     obs->push_back(make_pair(_igMap.Row()-1,_igMap.Col()-1));
+    _Obstacles.push_back(*obs);
 
     return _Obstacles;
 }
@@ -161,7 +187,7 @@ void VoronoiGraph::brushFire(int type,int threshold){
                 int findCol;
                 brushNode* newBPoint;
 
-                //4방향으로 뻗어나가면서 brush fire 진행
+                // 4방향으로 뻗어나가면서 brush fire 진행
                 for(int i=0; i<4; i++){
                     findRow = BPoint->BCodin.first    + fourWay[i][0];
                     findCol = BPoint->BCodin.second   + fourWay[i][1];
@@ -183,7 +209,7 @@ void VoronoiGraph::brushFire(int type,int threshold){
                         if(findRow < 0 || findRow > _igMap.Row()-1 || findCol < 0 || findCol > _igMap.Col()-1 ){
                             continue;
                         }
-                        if(_BFimg[findRow][findCol] - (BPoint->Bvalue + 1) < threshold){
+                        if(_BFimg[findRow][findCol] - (BPoint->Bvalue + 1) <= threshold){
                             continue;
                         }
                         else{
@@ -227,7 +253,7 @@ void VoronoiGraph::brushFire(int type,int threshold){
                 int findCol;
                 brushNode* newBPoint;
 
-                //4방향으로 뻗어나가면서 brush fire 진행
+                // 8방향으로 뻗어나가면서 brush fire 진행
                 for(int i=0; i<8; i++){
                     findRow = BPoint->BCodin.first    + eightWay[i][0];
                     findCol = BPoint->BCodin.second   + eightWay[i][1];
@@ -249,11 +275,14 @@ void VoronoiGraph::brushFire(int type,int threshold){
                         if(findRow < 0 || findRow > _igMap.Row()-1 || findCol < 0 || findCol > _igMap.Col()-1 ){
                             continue;
                         }
-                        if(_BFimg[findRow][findCol] - (BPoint->Bvalue + 1) < 5){
+                        if(abs(_BFimg[findRow][findCol] - (BPoint->Bvalue + 1)) <= threshold){
+//                            char  szID[51];
+//                            sprintf(szID, "%d_%d", findCol, findRow);
+//                            AddNode(findCol, findRow, szID);
                             continue;
                         }
                         else{
-                            // 만약 이미지의 값보다 작거나 이미지 값이 0이라면 집어넣는다.
+                            // 만약 이미지의 값보다 작다면 집어넣는다.
                             if( ( (BPoint->Bvalue + 1) < _BFimg[findRow][findCol])){
                                 newBPoint = new brushNode;
                                 newBPoint->BCodin = make_pair(findRow, findCol);
@@ -268,23 +297,77 @@ void VoronoiGraph::brushFire(int type,int threshold){
         }
     }
 
-    // 장애물 내부를 채워주기 위해서 사용
-    int nBKG            = 255;
-    int nCHK            = 100;
+//    // 장애물 내부를 채워주기 위해서 사용
+//    int nBKG            = 255;
+//    int nCHK            = 100;
 
-    for(int row=0; row < _igMap.Row(); row++){
-        for(int col=0; col < _igMap.Col(); col++){
+//    for(int row=0; row < _igMap.Row(); row++){
+//        for(int col=0; col < _igMap.Col(); col++){
 
-            if(_igMap._ppA[row][col] == nCHK){
-                for(int i = col+1; _igMap.Col(); i++){
-                    _BFimg._ppA[row][i] = 0;
-                    if(_igMap._ppA[row][i] == nBKG){
-                        col = i;
-                        break;
-                    }
-                }
-            }
-        }
+//            if(_igMap._ppA[row][col] == nCHK){
+//                for(int i = col+1; _igMap.Col(); i++){
+//                    _BFimg._ppA[row][i] = 0;
+//                    if(_igMap._ppA[row][i] == nBKG){
+//                        col = i;
+//                        break;
+//                    }
+//                }
+//            }
+//        }
+//    }
+
+    //--------------------------------------------------------------------------------
+    // local maximum을 노드로 추가
+
+//    for(int row=1; row < _BFimg.Row()-1; row++){
+//        for(int col=1; col < _BFimg.Col()-1; col++){
+//            int isLarge = 0;
+//            // lcoal maximum 픽셀인지 확인
+
+//            //장애물이면 패스(장애물의 픽셀 : 0)
+//            if(_BFimg[row][col] == 0){
+//                continue;
+//            }
+
+//            for(int i=0; i<8; i++){
+//                int findRow = row + eightWay[i][0];
+//                int findCol = col + eightWay[i][1];
+//                if(findRow >=0 && findCol >=0 && findRow < _BFimg.Row() && findCol < _BFimg.Col()){
+//                    if(_BFimg[findRow][findCol] > _BFimg[row][col]){
+//                        isLarge++;
+//                    }
+//                }
+
+//            }
+
+//            // local maximum을 노드로 추가
+//            if(isLarge == 0){
+//                char  szID[51];
+//                sprintf(szID, "%d_%d", col, row);
+//                AddNode(col, row, szID);
+//            }
+//        }
+//    }
+
+//    //서로간의 이웃으로 추가
+//    for(int i=0; i < navigationMap.size(); i++){
+//        for(int j=0; j < navigationMap.size(); j++){
+//            if(i==j)    continue;
+
+//            if(Heuristic(navigationMap[i]->nX, navigationMap[i]->nY, navigationMap[j]->nX, navigationMap[j]->nY) < 50){
+//                char* szID = navigationMap[j]->szID;
+
+//                nvimap::AddNeighbor(szID, navigationMap[i]->szID);
+//                nvimap::AddNeighbor(navigationMap[i]->szID, szID);
+//            }
+//        }
+
+//    }
+
+    // local maximum을 255픽셀로 바꿔서 보기 좋게 함
+
+    for(int i=0; i< navigationMap.size(); i++){
+        _BFimg[navigationMap[i]->nY][navigationMap[i]->nX] = 255;
     }
 
     return;
@@ -295,16 +378,21 @@ KImageGray VoronoiGraph::scaleUp(const KImageGray& igMap, int scale){
     KImageGray  scaleImg;
     scaleImg.Create(igMap.Row(), igMap.Col());
 
-    for(int _row=0; _row<scaleImg.Row(); _row++){
-        for(int _col=0; _col<scaleImg.Col(); _col++){
-            if(igMap[_row][_col] > 255){
-                scaleImg[_row][_col] = 255;
-            }
-            else{
-                scaleImg[_row][_col] = igMap[_row][_col] * scale;
-            }
+    if(scale == 0){
 
+    }
+    else{
+        for(int _row=0; _row<scaleImg.Row(); _row++){
+            for(int _col=0; _col<scaleImg.Col(); _col++){
+                if(igMap[_row][_col] * scale > 255){
+                    scaleImg[_row][_col] = 255;
+                }
+                else{
+                    scaleImg[_row][_col] = igMap[_row][_col] * scale;
+                }
+            }
         }
     }
+
     return scaleImg;
 }

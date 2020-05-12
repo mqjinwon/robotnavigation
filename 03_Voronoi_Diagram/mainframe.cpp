@@ -81,7 +81,6 @@ void MainFrame::OnMousePos(const int &nX, const int &nY, ImageForm* q_pForm)
     qDebug() << nX << ", " << nY;
 
 
-
     UpdateUI();
 }
 
@@ -281,6 +280,7 @@ void MainFrame::on_visibilityMap_clicked()
 void MainFrame::on_visibilityAstar_clicked()
 {
     if(mouseClickCnt >= 2){
+        mouseClickCnt -= 2;
 
         ImageForm* q_pForm = 0;
         for(int i=0; i<_plpImageForm->Count(); i++){
@@ -367,29 +367,29 @@ void MainFrame::on_voronoiDiagram_clicked()
     if(q_pForm == 0)
         return;
 
-    int thershold   = 3;
-    int scale       = 3;
-
-    VoronoiGraph *VRG = new VoronoiGraph(q_pForm->ImageGray());
-
-    QTime startTime = QTime::currentTime();
-    ImageForm* BF4img = 0;
-    for(int i=0; i < _plpImageForm->Count(); i++){
-        if((*_plpImageForm)[i]->ID() == "BRUSHFIRE_4"){
-            BF4img = (*_plpImageForm)[i];
-            break;
-        }
-    }
-
-
-    if(BF4img == 0)
-        BF4img = new ImageForm(VRG->Execute(BACKGROUND, FOURWAY, thershold, scale), "BRUSHFIRE_4", this);
-
-    BF4img->update();
-    BF4img->show();
-    qDebug() << startTime.elapsed();
+    int thershold   = 1;
+    int scale       = 5;
 
     VRG = new VoronoiGraph(q_pForm->ImageGray());
+
+    QTime startTime = QTime::currentTime();
+//    ImageForm* BF4img = 0;
+//    for(int i=0; i < _plpImageForm->Count(); i++){
+//        if((*_plpImageForm)[i]->ID() == "BRUSHFIRE_4"){
+//            BF4img = (*_plpImageForm)[i];
+//            break;
+//        }
+//    }
+
+
+//    if(BF4img == 0)
+//        BF4img = new ImageForm(VRG->Execute(BACKGROUND, FOURWAY, thershold, scale), "BRUSHFIRE_4", this);
+
+//    BF4img->update();
+//    BF4img->show();
+//    qDebug() << startTime.elapsed();
+
+//    VRG = new VoronoiGraph(q_pForm->ImageGray());
 
     startTime = QTime::currentTime();
     ImageForm* BF8img = 0;
@@ -402,12 +402,77 @@ void MainFrame::on_voronoiDiagram_clicked()
 
     if(BF8img == 0)
         BF8img = new ImageForm(VRG->Execute(BACKGROUND, EIGHTWAY, thershold, scale), "BRUSHFIRE_8", this);
+    _plpImageForm->Add(BF8img);
 
     BF8img->update();
     BF8img->show();
+
     qDebug() << startTime.elapsed();
+
 
     q_pForm->update();
     q_pForm->show();
     UpdateUI();
+}
+
+void MainFrame::on_voronoiAstar_clicked()
+{
+    if(mouseClickCnt >= 2){
+
+        qDebug() << "mouse counts are: " << mouseClickCnt;
+        mouseClickCnt -= 2;
+
+        ImageForm* BF8img = 0;
+        bool isRefer(false);
+        for(int i=0; i < _plpImageForm->Count(); i++){
+            if((*_plpImageForm)[i]->ID() == "BRUSHFIRE_8"){
+                BF8img = (*_plpImageForm)[i];
+                isRefer = true;
+                break;
+            }
+        }
+
+        // 빈 이미지를 만들기 위해 사용
+        if(isRefer){
+            ImageForm* BF32img = new ImageForm(BF8img->_igMain.GrayToRGB(), "colorImg", this);
+            _plpImageForm->Add(BF32img);
+
+            // 시작점 끝점 그리기
+            QPolygon            q_Polygon;
+
+            QPair<int,int>  startPos(mousePos.front());         mousePos.pop();
+            QPair<int,int>  endPos(mousePos.front());           mousePos.pop();
+
+            VRG->AddNode(startPos.first, startPos.second, "start");
+            VRG->AddSENeigborTo("start");
+
+            q_Polygon << QPoint(startPos.first, startPos.second);
+            BF32img->DrawPoints(q_Polygon, QColorConstants::Green, 7);
+
+            VRG->AddNode(endPos.first, endPos.second, "end");
+            VRG->AddSENeigborTo("end");
+
+            q_Polygon.clear();
+            q_Polygon << QPoint(endPos.first, endPos.second);
+            BF32img->DrawPoints(q_Polygon, QColorConstants::Red, 7);
+
+            // A star 알고리즘을 사용하고, 최단경로를 노란색으로 칠해주기
+            JNODE* result = VRG->nvimap::Execute("start", "end");
+
+            while(1){
+                if(result->opPrvious == nullptr){
+                    break;
+                }
+                BF32img->DrawLine(result->nX, result->nY, result->opPrvious->nX, result->opPrvious->nY, QColorConstants::Yellow, 3);
+                result = result->opPrvious;
+            }
+
+            BF32img->update();
+            BF32img->show();
+            UpdateUI();
+        }
+
+
+    }
+
 }

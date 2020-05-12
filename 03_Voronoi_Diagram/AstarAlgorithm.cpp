@@ -16,25 +16,37 @@ JNODE* nvimap::FindNode(const char *szID)
 }
 
 bool nvimap::AddNode(const int &nX, const int &nY, const char *szID){
-    JNODE*  opNode      = new JNODE;
-    opNode->nX          = nX;
-    opNode->nY          = nY;
-    opNode->nNeighbors  = 0;
-    opNode->opPrvious   = nullptr;
+    JNODE*  opNode  = FindNode(szID);
 
-    opNode->dCostG      = numeric_limits<short>::max();
-    opNode->dCostF      = opNode->dCostG;
+    //if same ID already exist, return false
+    if(opNode == nullptr){
+        opNode      = new JNODE;
+        opNode->nX          = nX;
+        opNode->nY          = nY;
+        opNode->nNeighbors  = 0;
+        opNode->opPrvious   = nullptr;
 
-    strcpy(opNode->szID, szID);
+        opNode->dCostG      = numeric_limits<short>::max();
+        opNode->dCostF      = opNode->dCostG;
 
-    navigationMap.push_back(opNode);
+        strcpy(opNode->szID, szID);
 
-    return true;
+        navigationMap.push_back(opNode);
+
+        return true;
+    }
+    else{
+        return false;
+    }
+
 }
 
 bool nvimap::AddNeighbor(const char *szID, const char *szNeighbor){
     JNODE*  opNode  = FindNode(szID);
     int*    nNum    = &opNode->nNeighbors;
+
+    if(opNode == nullptr)
+        return false;
 
     //if same ID already exist, return false
     for(int i=0; i < *nNum; i++){
@@ -43,7 +55,8 @@ bool nvimap::AddNeighbor(const char *szID, const char *szNeighbor){
     }
 
     //add neighbor
-    strcpy(opNode->szpNeighbor[(*nNum)++], szNeighbor);
+    strcpy(opNode->szpNeighbor[*nNum], szNeighbor);
+    (*nNum)++;
     return true;
 }
 
@@ -150,6 +163,20 @@ JNODE *nvimap::Execute(const char *stID, const char *endID){
     }while(1);
 
 
+}
+
+bool nvimap::AddNeigborTo(const char *szID){
+    JNODE*  opNode  = FindNode(szID);
+
+    // Register neigbor other node
+    for(int i=0; i < navigationMap.size(); i++){
+        if(navigationMap[i]->szID != opNode->szID){
+            nvimap::AddNeighbor(navigationMap[i]->szID, szID);
+            nvimap::AddNeighbor(szID, navigationMap[i]->szID);
+        }
+    }
+
+    return false;
 }
 
 

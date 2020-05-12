@@ -8,7 +8,7 @@
 #include <cmath>
 #include <QDebug>
 
-#define _MAX_NEIGHBOR_A_STAR    30
+#define _MAX_NEIGHBOR_A_STAR    300
 
 using namespace std;
 
@@ -48,6 +48,7 @@ public:
     bool AddNeighbor(const char* szID, const char* szNeighbor);     // add neighbor node
     double Heuristic(int sX, int sY, int eX, int eY);               // two dimension euclidean distance
     JNODE* Execute(const char* st, const char* end);                // execute Astar algorithm
+    bool AddNeigborTo(const char *szID);                            // add neighbor
 
 };
 

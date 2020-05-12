@@ -32,8 +32,9 @@ private:
     // defined by jinwon
     nvimap*                         opAStar;
     VisibilityGraph*                _opVG;
+    VoronoiGraph*                   VRG;
     queue<QPair<int,int>>           mousePos;
-    int                             mouseClickCnt;
+    int                             mouseClickCnt   = 0;
 
 public:
     explicit MainFrame(QWidget *parent = 0);
@@ -61,6 +62,8 @@ private slots:
     void on_visibilityAstar_clicked();
 
     void on_voronoiDiagram_clicked();
+
+    void on_voronoiAstar_clicked();
 
 protected:
     void closeEvent(QCloseEvent* event);

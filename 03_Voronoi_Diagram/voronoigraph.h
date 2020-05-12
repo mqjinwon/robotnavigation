@@ -5,6 +5,7 @@
 #include <vector>
 #include <queue>
 
+typedef pair<int, int>      Jpoint;
 typedef pair<int, int>      Opoint;
 typedef vector<Opoint>      Obstacle;
 typedef vector<Obstacle>    Obstacles;
@@ -44,7 +45,9 @@ public:
         _igMap = igMap;
     }
 
-    KImageGray Execute(int obType, int bfType, int thershold=3, int scale=3);
+    KImageGray  Execute(int obType, int bfType, int threshold=3, int scale=0);
+    bool        AddSENeigborTo(const char *szID);                            // add start, end node neighbor
+
 
     /* FOREGROUND
      * - object(obstacle) : 255
@@ -62,7 +65,7 @@ public:
     */
     void        brushFire(int type, int threshold=3);
 
-    KImageGray  scaleUp(const KImageGray& igMap, int scale=3);
+    KImageGray  scaleUp(const KImageGray& igMap, int scale);
 
     KImageGray  getigMap(void)  {return _igMap;}
 };

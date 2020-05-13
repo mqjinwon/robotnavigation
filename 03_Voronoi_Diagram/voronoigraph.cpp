@@ -165,7 +165,9 @@ void VoronoiGraph::brushFire(int type,int threshold){
     // 경계값의 경우 0으로 만들어주고 더이상 진행하지 않는다.
     // 점점 멀어져나가다가 이미지에 저장된 값과 점이 가지고 있는 값의 차이가 임계값을 내부에 포함되면 그만 진행한다.
     if(type == FOURWAY){
-
+        // 장애물이 비어있지 않다면 첫번째 장애물을 이용해서 기준 이미지를 만든다.
+        // 기준 이미지 : 장애물로부터 뻗어나가는 값중에서 큰값을 기준으로 brush fire 값을 정의한다.
+        // 이때 장애물의 경계선에 있을 경우 queue를 삭제해버린다.
         for(int i=0; i< _Obstacles.size(); i++){
             _obs = &_Obstacles[i];
 
@@ -209,7 +211,7 @@ void VoronoiGraph::brushFire(int type,int threshold){
                         if(findRow < 0 || findRow > _igMap.Row()-1 || findCol < 0 || findCol > _igMap.Col()-1 ){
                             continue;
                         }
-                        if(_BFimg[findRow][findCol] - (BPoint->Bvalue + 1) <= threshold){
+                        if(abs(_BFimg[findRow][findCol] - (BPoint->Bvalue + 1)) <= threshold){
                             continue;
                         }
                         else{
@@ -276,13 +278,10 @@ void VoronoiGraph::brushFire(int type,int threshold){
                             continue;
                         }
                         if(abs(_BFimg[findRow][findCol] - (BPoint->Bvalue + 1)) <= threshold){
-//                            char  szID[51];
-//                            sprintf(szID, "%d_%d", findCol, findRow);
-//                            AddNode(findCol, findRow, szID);
                             continue;
                         }
                         else{
-                            // 만약 이미지의 값보다 작다면 집어넣는다.
+                            // 만약 이미지의 값보다 작거나 이미지 값이 0이라면 집어넣는다.
                             if( ( (BPoint->Bvalue + 1) < _BFimg[findRow][findCol])){
                                 newBPoint = new brushNode;
                                 newBPoint->BCodin = make_pair(findRow, findCol);
@@ -297,75 +296,74 @@ void VoronoiGraph::brushFire(int type,int threshold){
         }
     }
 
-//    // 장애물 내부를 채워주기 위해서 사용
-//    int nBKG            = 255;
-//    int nCHK            = 100;
+    // 장애물 내부를 채워주기 위해서 사용
+    int nBKG            = 255;
+    int nCHK            = 100;
 
-//    for(int row=0; row < _igMap.Row(); row++){
-//        for(int col=0; col < _igMap.Col(); col++){
+    for(int row=0; row < _igMap.Row(); row++){
+        for(int col=0; col < _igMap.Col(); col++){
 
-//            if(_igMap._ppA[row][col] == nCHK){
-//                for(int i = col+1; _igMap.Col(); i++){
-//                    _BFimg._ppA[row][i] = 0;
-//                    if(_igMap._ppA[row][i] == nBKG){
-//                        col = i;
-//                        break;
-//                    }
-//                }
-//            }
-//        }
-//    }
+            if(_igMap._ppA[row][col] == nCHK){
+                for(int i = col+1; _igMap.Col(); i++){
+                    _BFimg._ppA[row][i] = 0;
+                    if(_igMap._ppA[row][i] == nBKG){
+                        col = i;
+                        break;
+                    }
+                }
+            }
+        }
+    }
 
     //--------------------------------------------------------------------------------
     // local maximum을 노드로 추가
 
-//    for(int row=1; row < _BFimg.Row()-1; row++){
-//        for(int col=1; col < _BFimg.Col()-1; col++){
-//            int isLarge = 0;
-//            // lcoal maximum 픽셀인지 확인
+    for(int row=1; row < _BFimg.Row()-1; row++){
+        for(int col=1; col < _BFimg.Col()-1; col++){
+            int isLarge = 0;
+            // lcoal maximum 픽셀인지 확인
 
-//            //장애물이면 패스(장애물의 픽셀 : 0)
-//            if(_BFimg[row][col] == 0){
-//                continue;
-//            }
+            //장애물이면 패스(장애물의 픽셀 : 0)
+            if(_BFimg[row][col] == 0){
+                continue;
+            }
 
-//            for(int i=0; i<8; i++){
-//                int findRow = row + eightWay[i][0];
-//                int findCol = col + eightWay[i][1];
-//                if(findRow >=0 && findCol >=0 && findRow < _BFimg.Row() && findCol < _BFimg.Col()){
-//                    if(_BFimg[findRow][findCol] > _BFimg[row][col]){
-//                        isLarge++;
-//                    }
-//                }
+            for(int i=0; i<8; i++){
+                int findRow = row + eightWay[i][0];
+                int findCol = col + eightWay[i][1];
+                if(findRow >=0 && findCol >=0 && findRow < _BFimg.Row() && findCol < _BFimg.Col()){
+                    if(_BFimg[findRow][findCol] > _BFimg[row][col]){
+                        isLarge++;
+                    }
+                }
 
-//            }
+            }
 
-//            // local maximum을 노드로 추가
-//            if(isLarge == 0){
-//                char  szID[51];
-//                sprintf(szID, "%d_%d", col, row);
-//                AddNode(col, row, szID);
-//            }
-//        }
-//    }
+            // local maximum을 노드로 추가
+            if(isLarge <= 1){
+                char  szID[51];
+                sprintf(szID, "%d_%d", col, row);
+                AddNode(col, row, szID);
+            }
+        }
+    }
 
-//    //서로간의 이웃으로 추가
-//    for(int i=0; i < navigationMap.size(); i++){
-//        for(int j=0; j < navigationMap.size(); j++){
-//            if(i==j)    continue;
+    //서로간의 이웃으로 추가
+    for(int i=0; i < navigationMap.size(); i++){
+        for(int j=0; j < navigationMap.size(); j++){
+            if(i==j)    continue;
 
-//            if(Heuristic(navigationMap[i]->nX, navigationMap[i]->nY, navigationMap[j]->nX, navigationMap[j]->nY) < 50){
-//                char* szID = navigationMap[j]->szID;
+            if( abs(navigationMap[j]->nX - navigationMap[i]->nX) + abs(navigationMap[i]->nY - navigationMap[j]->nY) <= 3){
+                char* szID = navigationMap[j]->szID;
 
-//                nvimap::AddNeighbor(szID, navigationMap[i]->szID);
-//                nvimap::AddNeighbor(navigationMap[i]->szID, szID);
-//            }
-//        }
+                nvimap::AddNeighbor(szID, navigationMap[i]->szID);
+                nvimap::AddNeighbor(navigationMap[i]->szID, szID);
+            }
+        }
 
-//    }
+    }
 
-    // local maximum을 255픽셀로 바꿔서 보기 좋게 함
-
+//     local maximum을 255픽셀로 바꿔서 보기 좋게 함
     for(int i=0; i< navigationMap.size(); i++){
         _BFimg[navigationMap[i]->nY][navigationMap[i]->nX] = 255;
     }

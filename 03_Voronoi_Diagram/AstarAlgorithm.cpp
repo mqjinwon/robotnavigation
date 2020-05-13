@@ -20,7 +20,7 @@ bool nvimap::AddNode(const int &nX, const int &nY, const char *szID){
 
     //if same ID already exist, return false
     if(opNode == nullptr){
-        opNode      = new JNODE;
+        opNode              = new JNODE;
         opNode->nX          = nX;
         opNode->nY          = nY;
         opNode->nNeighbors  = 0;
@@ -71,7 +71,7 @@ JNODE *nvimap::Execute(const char *stID, const char *endID){
         exit(1);
     }
 
-    JNODE* endNode      = FindNode(endID);                           // end node
+    JNODE* endNode      = FindNode(endID);                              // end node
     int eX              = endNode->nX;  int eY = endNode->nY;
 
     JNODE* startNode    = new JNODE;
@@ -85,15 +85,10 @@ JNODE *nvimap::Execute(const char *stID, const char *endID){
     JNODE* findNode;                                                    // find node
 
 
+    findNode = AstarContainer.top();
+    AstarContainer.pop();
 
     do{
-        //can't reach endNode
-        if(AstarContainer.empty()){
-            exit(1);
-        }
-
-        findNode = AstarContainer.top();
-        AstarContainer.pop();
 
         //if find endNode
         if(strcmp(findNode->szID, endNode->szID) == 0){
@@ -104,11 +99,15 @@ JNODE *nvimap::Execute(const char *stID, const char *endID){
         for(int nNum=0; nNum < findNode->nNeighbors; nNum++){
 
             JNODE* newNODE = new JNODE;
+
+            // 다시 되돌아가는거 방지 --------------------------------------------------------- 중요!!! 안그러면 거의 무한 루프에 빠진다.
+            if(FindNode(findNode->szpNeighbor[nNum]) == findNode->opPrvious)  continue;
+
             memcpy(newNODE, FindNode(findNode->szpNeighbor[nNum]), sizeof(struct JNODE));
 
             // dcostF,G 값을 갱신하고, previous 노드에 추가한다
 
-            // Add
+            // newNODE 값 대입
             newNODE->opPrvious = findNode;
             newNODE->dCostG = findNode->dCostG + Heuristic(findNode->nX, findNode->nY, newNODE->nX, newNODE->nY);
             newNODE->dCostF = newNODE->dCostG + Heuristic(newNODE->nX, newNODE->nY, eX, eY);
@@ -134,6 +133,7 @@ JNODE *nvimap::Execute(const char *stID, const char *endID){
                 if(strcmp(compareNode->szID, newNODE->szID) == 0){
                     if(newNODE->dCostF < compareNode->dCostF){
                         compareQueue.push(newNODE);
+                        delete compareNode;
                     }
                     else{
                         compareQueue.push(compareNode);
@@ -157,8 +157,15 @@ JNODE *nvimap::Execute(const char *stID, const char *endID){
                 AstarContainer.push(compareQueue.front());
                 compareQueue.pop();
             }
-
         }
+
+        //can't reach endNode
+        if(AstarContainer.empty()){
+            exit(1);
+        }
+
+        findNode = AstarContainer.top();
+        AstarContainer.pop();
 
     }while(1);
 
@@ -177,6 +184,16 @@ bool nvimap::AddNeigborTo(const char *szID){
     }
 
     return false;
+}
+
+void nvimap::Reset()
+{
+    if(navigationMap.size() != 0){
+        for(auto v : navigationMap){
+            delete v;
+        }
+        navigationMap.clear();
+    }
 }
 
 

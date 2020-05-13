@@ -22,7 +22,7 @@ struct JNODE{
     char    szpNeighbor[_MAX_NEIGHBOR_A_STAR][51];  // save neighbor node
     int     nNeighbors;                             // neighbor node num
 
-    JNODE*  opPrvious;                              // previous Node pointer
+    JNODE*  opPrvious = nullptr;                              // previous Node pointer
 };
 
 class nvimap {
@@ -38,6 +38,9 @@ public:
     vector<JNODE*>                                  navigationMap;  // making navigation map
 
     nvimap(){};
+    ~nvimap(){
+        Reset();
+    }
     //allocate vector memory
     nvimap(int mapsize){
         navigationMap.reserve(mapsize * sizeof(JNODE));
@@ -49,6 +52,9 @@ public:
     double Heuristic(int sX, int sY, int eX, int eY);               // two dimension euclidean distance
     JNODE* Execute(const char* st, const char* end);                // execute Astar algorithm
     bool AddNeigborTo(const char *szID);                            // add neighbor
+
+protected:
+    void Reset();
 
 };
 

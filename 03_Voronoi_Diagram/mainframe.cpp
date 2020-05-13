@@ -373,41 +373,22 @@ void MainFrame::on_voronoiDiagram_clicked()
     VRG = new VoronoiGraph(q_pForm->ImageGray());
 
     QTime startTime = QTime::currentTime();
-//    ImageForm* BF4img = 0;
-//    for(int i=0; i < _plpImageForm->Count(); i++){
-//        if((*_plpImageForm)[i]->ID() == "BRUSHFIRE_4"){
-//            BF4img = (*_plpImageForm)[i];
-//            break;
-//        }
-//    }
-
-
-//    if(BF4img == 0)
-//        BF4img = new ImageForm(VRG->Execute(BACKGROUND, FOURWAY, thershold, scale), "BRUSHFIRE_4", this);
-
-//    BF4img->update();
-//    BF4img->show();
-//    qDebug() << startTime.elapsed();
-
-//    VRG = new VoronoiGraph(q_pForm->ImageGray());
-
-    startTime = QTime::currentTime();
-    ImageForm* BF8img = 0;
+    ImageForm* BFimg = 0;
     for(int i=0; i < _plpImageForm->Count(); i++){
-        if((*_plpImageForm)[i]->ID() == "BRUSHFIRE_8"){
-            BF8img = (*_plpImageForm)[i];
+        if((*_plpImageForm)[i]->ID() == "BRUSHFIRE"){
+            BFimg = (*_plpImageForm)[i];
             break;
         }
     }
 
-    if(BF8img == 0)
-        BF8img = new ImageForm(VRG->Execute(BACKGROUND, EIGHTWAY, thershold, scale), "BRUSHFIRE_8", this);
-    _plpImageForm->Add(BF8img);
+    if(BFimg == 0)
+        BFimg = new ImageForm(VRG->Execute(BACKGROUND, FOURWAY, thershold, scale), "BRUSHFIRE", this);
+    _plpImageForm->Add(BFimg);
 
-    BF8img->update();
-    BF8img->show();
+    BFimg->update();
+    BFimg->show();
+    qDebug() << "Voronoi algorithm time:" << startTime.elapsed();
 
-    qDebug() << startTime.elapsed();
 
 
     q_pForm->update();
@@ -419,14 +400,16 @@ void MainFrame::on_voronoiAstar_clicked()
 {
     if(mouseClickCnt >= 2){
 
+        QTime startTime = QTime::currentTime();
+
         qDebug() << "mouse counts are: " << mouseClickCnt;
         mouseClickCnt -= 2;
 
-        ImageForm* BF8img = 0;
+        ImageForm* BFimg = 0;
         bool isRefer(false);
         for(int i=0; i < _plpImageForm->Count(); i++){
-            if((*_plpImageForm)[i]->ID() == "BRUSHFIRE_8"){
-                BF8img = (*_plpImageForm)[i];
+            if((*_plpImageForm)[i]->ID() == "BRUSHFIRE"){
+                BFimg = (*_plpImageForm)[i];
                 isRefer = true;
                 break;
             }
@@ -434,8 +417,8 @@ void MainFrame::on_voronoiAstar_clicked()
 
         // 빈 이미지를 만들기 위해 사용
         if(isRefer){
-            ImageForm* BF32img = new ImageForm(BF8img->_igMain.GrayToRGB(), "colorImg", this);
-            _plpImageForm->Add(BF32img);
+            ImageForm* BFCimg = new ImageForm(BFimg->_igMain.GrayToRGB(), "BF_SHORT_PATH", this);
+            _plpImageForm->Add(BFCimg);
 
             // 시작점 끝점 그리기
             QPolygon            q_Polygon;
@@ -447,14 +430,14 @@ void MainFrame::on_voronoiAstar_clicked()
             VRG->AddSENeigborTo("start");
 
             q_Polygon << QPoint(startPos.first, startPos.second);
-            BF32img->DrawPoints(q_Polygon, QColorConstants::Green, 7);
+            BFCimg->DrawPoints(q_Polygon, QColorConstants::Green, 7);
 
             VRG->AddNode(endPos.first, endPos.second, "end");
             VRG->AddSENeigborTo("end");
 
             q_Polygon.clear();
             q_Polygon << QPoint(endPos.first, endPos.second);
-            BF32img->DrawPoints(q_Polygon, QColorConstants::Red, 7);
+            BFCimg->DrawPoints(q_Polygon, QColorConstants::Red, 7);
 
             // A star 알고리즘을 사용하고, 최단경로를 노란색으로 칠해주기
             JNODE* result = VRG->nvimap::Execute("start", "end");
@@ -463,16 +446,15 @@ void MainFrame::on_voronoiAstar_clicked()
                 if(result->opPrvious == nullptr){
                     break;
                 }
-                BF32img->DrawLine(result->nX, result->nY, result->opPrvious->nX, result->opPrvious->nY, QColorConstants::Yellow, 3);
+                BFCimg->DrawLine(result->nX, result->nY, result->opPrvious->nX, result->opPrvious->nY, QColorConstants::Yellow, 3);
                 result = result->opPrvious;
             }
 
-            BF32img->update();
-            BF32img->show();
+            BFCimg->update();
+            BFCimg->show();
             UpdateUI();
         }
-
-
+        qDebug() << "Astar algorithm time:" << startTime.elapsed();
     }
 
 }

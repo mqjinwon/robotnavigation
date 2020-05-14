@@ -22,7 +22,7 @@ struct JNODE{
     char    szpNeighbor[_MAX_NEIGHBOR_A_STAR][51];  // save neighbor node
     int     nNeighbors;                             // neighbor node num
 
-    JNODE*  opPrvious = nullptr;                              // previous Node pointer
+    JNODE*  opPrvious = nullptr;                    // previous Node pointer
 };
 
 class nvimap {

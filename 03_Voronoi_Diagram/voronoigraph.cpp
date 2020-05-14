@@ -318,8 +318,8 @@ void VoronoiGraph::brushFire(int type,int threshold){
     //--------------------------------------------------------------------------------
     // local maximum을 노드로 추가
 
-    for(int row=1; row < _BFimg.Row()-1; row++){
-        for(int col=1; col < _BFimg.Col()-1; col++){
+    for(int row=0; row < _BFimg.Row(); row++){
+        for(int col=0; col < _BFimg.Col(); col++){
             int isLarge = 0;
             // lcoal maximum 픽셀인지 확인
 

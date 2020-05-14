@@ -71,11 +71,10 @@ JNODE *nvimap::Execute(const char *stID, const char *endID){
         exit(1);
     }
 
-    JNODE* endNode      = FindNode(endID);                              // end node
+    JNODE* endNode      = FindNode(endID);                           // end node
     int eX              = endNode->nX;  int eY = endNode->nY;
 
-    JNODE* startNode    = new JNODE;
-    memcpy(startNode, FindNode(stID), sizeof(struct JNODE));
+    JNODE* startNode    = FindNode(stID);
     startNode->dCostG   = 0.;
     startNode->dCostF   = startNode->dCostG + Heuristic(startNode->nX, startNode->nY, eX, eY);
 
@@ -83,7 +82,6 @@ JNODE *nvimap::Execute(const char *stID, const char *endID){
     AstarContainer.push(startNode);                                     // add startNode
 
     JNODE* findNode;                                                    // find node
-
 
     findNode = AstarContainer.top();
     AstarContainer.pop();
@@ -98,22 +96,14 @@ JNODE *nvimap::Execute(const char *stID, const char *endID){
         //add neighbor node
         for(int nNum=0; nNum < findNode->nNeighbors; nNum++){
 
-            JNODE* newNODE = new JNODE;
-
-            // 다시 되돌아가는거 방지 --------------------------------------------------------- 중요!!! 안그러면 거의 무한 루프에 빠진다.
-            if(FindNode(findNode->szpNeighbor[nNum]) == findNode->opPrvious)  continue;
-
-            memcpy(newNODE, FindNode(findNode->szpNeighbor[nNum]), sizeof(struct JNODE));
-
-            // dcostF,G 값을 갱신하고, previous 노드에 추가한다
-
-            // newNODE 값 대입
-            newNODE->opPrvious = findNode;
-            newNODE->dCostG = findNode->dCostG + Heuristic(findNode->nX, findNode->nY, newNODE->nX, newNODE->nY);
-            newNODE->dCostF = newNODE->dCostG + Heuristic(newNODE->nX, newNODE->nY, eX, eY);
+            JNODE* neighborNODE = FindNode(findNode->szpNeighbor[nNum]);
 
 
-            ////don't put newNODE's dCostF has lager than Acontainer's dCostF
+            // dcostF,G 값을 잠시 저장한다.
+            double tmpCostG = findNode->dCostG + Heuristic(findNode->nX, findNode->nY, neighborNODE->nX, neighborNODE->nY);
+            double tmpCostF = tmpCostG + Heuristic(neighborNODE->nX, neighborNODE->nY, eX, eY);
+
+            ////don't put neighborNODE's dCostF has lager than Acontainer's dCostF
             //for comparing, change prior queue to queue
             JNODE* compareNode = nullptr;
             queue<JNODE*> compareQueue;
@@ -130,14 +120,15 @@ JNODE *nvimap::Execute(const char *stID, const char *endID){
                 compareQueue.pop();
 
                 //if AstarContainer already has same ID
-                if(strcmp(compareNode->szID, newNODE->szID) == 0){
-                    if(newNODE->dCostF < compareNode->dCostF){
-                        compareQueue.push(newNODE);
-                        delete compareNode;
+                if(strcmp(compareNode->szID, neighborNODE->szID) == 0){
+                    if(tmpCostF < compareNode->dCostF){
+                        neighborNODE->dCostF     = tmpCostF;
+                        neighborNODE->dCostG     = tmpCostG;
+                        neighborNODE->opPrvious  = findNode;
+                        compareQueue.push(neighborNODE);
                     }
                     else{
                         compareQueue.push(compareNode);
-                        delete newNODE;
                     }
                     identityFlag = true;
                     break;
@@ -150,7 +141,12 @@ JNODE *nvimap::Execute(const char *stID, const char *endID){
 
             //there is not same id
             if(!identityFlag){
-                compareQueue.push(newNODE);
+                if(tmpCostF < neighborNODE->dCostF){
+                    neighborNODE->dCostF     = tmpCostF;
+                    neighborNODE->dCostG     = tmpCostG;
+                    neighborNODE->opPrvious  = findNode;
+                    compareQueue.push(neighborNODE);
+                }
             }
 
             while(!compareQueue.empty()){

@@ -1,0 +1,69 @@
+#ifndef VORONOIGRAPH_H
+#define VORONOIGRAPH_H
+#include "AstarAlgorithm.h"
+#include <kfc.h>
+#include <vector>
+#include <queue>
+
+#define DEBUG 0
+
+typedef pair<int, int>      Opoint;
+typedef vector<Opoint>      Obstacle;
+typedef vector<Obstacle>    Obstacles;
+
+enum TYPE{
+    FOREGROUND = 0,
+    BACKGROUND,
+    FOURWAY,
+    EIGHTWAY
+};
+class VoronoiGraph : public nvimap{
+
+protected:
+    //{row, col} clockwise from right
+    int             fourWay[4][2]   = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
+    int             eightWay[8][2]  = {{0, 1}, {1, 1}, {1, 0}, {1, -1},
+                                                {0, -1}, {-1, -1}, {-1, 0}, {-1, 1}};
+
+    struct brushNode{
+        Opoint      BCodin;
+        int         Bvalue;
+        int         obsNum;
+    };
+
+public:
+    KImageGray      _igMap;
+    KImageGray      _BFimg;             //brush fire img
+    Obstacles       _Obstacles;
+
+    VoronoiGraph();
+    VoronoiGraph(const KImageGray& igMap){
+        _igMap = igMap;
+    }
+
+    KImageGray  Execute(int obType, int bfType, int threshold=3, int scale=0, int borderSize=0);
+    bool        AddSENeigborTo(const char *szID);                            // add start, end node neighbor
+
+
+    /* FOREGROUND
+     * - object(obstacle) : 255
+     * - background       : 0
+     * ELSE
+     * - object(obstacle) : 0
+     * - background       : 255
+     */
+    Obstacles   getObstacles(int type, int borderSize = 0);
+
+    /* FOURWAY
+     * - find 4way method
+     * EIGHTWAY
+     * - find 8way method
+    */
+    void        brushFire(int type, int threshold=3);
+
+    KImageGray  scaleUp(const KImageGray& igMap, int scale);
+
+    KImageGray  getigMap(void)  {return _igMap;}
+};
+
+#endif // VORONOIGRAPH_H

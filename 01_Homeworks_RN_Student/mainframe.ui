@@ -434,7 +434,7 @@
         <enum>QTabWidget::Rounded</enum>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>3</number>
        </property>
        <property name="iconSize">
         <size>
@@ -510,7 +510,7 @@
            <x>71</x>
            <y>36</y>
            <width>139</width>
-           <height>23</height>
+           <height>25</height>
           </rect>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_9">

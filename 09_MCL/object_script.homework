@@ -1,0 +1,15 @@
+main.o
+AstarAlgorithm.o
+VisibilityGraph.o
+Voronoigraph.o
+likelihoodfield.o
+mainframe.o
+imageform.o
+kfc.o
+odometrymotion.o
+potentialfield.o
+renderarea.o
+qrc_mainframe.o
+moc_mainframe.o
+moc_imageform.o
+moc_renderarea.o

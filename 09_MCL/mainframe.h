@@ -36,7 +36,8 @@ extern KSensorLidar2D	_oLidar2D; //BeamSensor를 저장하는 Hash Map
 extern KImageGray       slamMap;
 extern double           alpha[4];
 
-extern pair<int,int>    target_pos;
+extern pair<float, float> start_pos;
+extern pair<float, float> target_pos;
 
 extern LikelihoodField* LFD;
 

@@ -57,10 +57,6 @@ void deadreckoning(dReal& s_x, dReal& s_y, dReal& s_t, int period);
 
 void simLoop(int pause);
 
-void setDrawStuff();
-
-void jointFix();
-
 //mcl 초기화 부분
 void initMCL(OPoints& vcChi, vector<double>& vcW, const KImageGray& igMap);
 
@@ -68,4 +64,7 @@ void measurementMCL();
 
 void resamplingMCL();
 
+void setDrawStuff();
+
+void jointFix();
 #endif

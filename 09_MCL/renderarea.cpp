@@ -101,7 +101,7 @@ void RenderArea::paintEvent(QPaintEvent *event){
         painter.drawPoints(polygon);
 
         pen.setColor(QColor(255, 0, 0));
-        pen.setWidth(5);
+        pen.setWidth(7);
         painter.setPen(pen);
         painter.drawPoints(polygon2);
         break;

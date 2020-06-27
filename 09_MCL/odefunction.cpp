@@ -15,8 +15,10 @@
 // 장애물 변수
 #define GRIDSIZE 0.05
 #define MAPSIZE  GRIDSIZE * 200
-#define XINIT GRIDSIZE*100
-#define YINIT GRIDSIZE*100
+float XINIT;
+float YINIT;
+//#define XINIT GRIDSIZE*100
+//#define YINIT GRIDSIZE*100
 
 
 dWorldID        world;
@@ -29,15 +31,16 @@ int             mclStep = 0;
 
 // 로봇 제어
 #define MIN_VEL 0.1
-#define MAX_VEL 2
-dReal Kp = 0.02;   // 조향제어 게인     // 0.006
-dReal Psi = 0.0035;  // 전후진제어 게인    //0.003
+#define MAX_VEL 13
+dReal Kp = 0.105;   // 조향제어 게인
+dReal Psi = 0.05;  // 전후진제어 게인
 dReal W;    // 조향제어 아웃풋
 dReal V;    // 전후진제어 아웃풋
 dReal Qd;   // 목표 회전 각도
 dReal Q;    // 현재 회전 각도
 
-pair<int, int> target_pos;
+pair<float, float> start_pos;
+pair<float, float> target_pos;
 
 // 로봇 위치
 dReal Xpos, Ypos, Zpos;
@@ -53,7 +56,7 @@ typedef struct {
   double  l,r,m;
 } MyObject;
 
-dReal   sim_step = 0.02;
+dReal   sim_step = 0.005;
 int     resample_step = 0;
 
 MyObject wheel[NUM], base, neck, camera, ball;
@@ -85,12 +88,13 @@ LikelihoodField*    LFD = nullptr;
 KImageGray          slamMap;
 
 RenderArea*         particleImg;
+RenderArea*         beamTouchImg;
 
 //odomertry 용
-OdometryMotion* odometry = new OdometryMotion(PARTICLENUM, XINIT, YINIT, 0);
+OdometryMotion* odometry = new OdometryMotion(PARTICLENUM, 0, 0, 0);
 double          alpha[4] ={0,};
 OPoints         odoData;
-KRandom         _rnSampler;
+KRandom         _rnSampler(1000000);
 
 
 dJointID ObsJointID[12]; // 장애물의 JOINT ID
@@ -239,8 +243,7 @@ void makeBall()
   ball.geom = dCreateSphere(space,BALL_R);
   dGeomSetBody(ball.geom,ball.body);
 
-  qDebug("target.X : %d, target.Y : %d", target_pos.first, target_pos.second);
-  dBodySetPosition(ball.body,target_pos.first, target_pos.second,BALL_P[2]);
+  dBodySetPosition(ball.body,(target_pos.first / slamMap.Col()) * MAPSIZE, (target_pos.second / slamMap.Row()) * MAPSIZE,BALL_P[2]);
 }
 
 void makeRobot()
@@ -361,7 +364,7 @@ void makeRobot()
   oInfo.dY          = START_Y+YINIT;
   oInfo.dZ          = START_Z;
   oInfo.dMaxLength	= RAIDARLEN;      //최대 거리는 3m
-  // 범위가 180도임
+  // 범위가 90도임
   oInfo.nLoRange	= -90;
   oInfo.nHiRange	= 90;
   oInfo.oBase       = oBase;
@@ -428,7 +431,7 @@ void SimultaneousPC()
 
 
     // 목적지 근처에 도달하면, 컨트롤을 멈춘다.
-    if(sqrt(pow(Xpos - target_pos.first, 2) + pow(Ypos - target_pos.second, 2)) < 13 * GRIDSIZE){
+    if(sqrt(pow(Xpos - (target_pos.first / slamMap.Col()) * MAPSIZE, 2) + pow(Ypos - (target_pos.second / slamMap.Row()) * MAPSIZE, 2)) < 10 * GRIDSIZE){
         controlFlag = 0;
     }
    //  최대 속도를 넘었을 때, 고정시키기
@@ -601,8 +604,14 @@ void odeInitialize(){
 
     dWorldSetGravity(world, 0, 0, -9.8);
 
+    XINIT = (start_pos.first / slamMap.Col()) * MAPSIZE;
+    YINIT = (start_pos.second / slamMap.Row()) * MAPSIZE;
+
+    printf("x : %d, y : %d", start_pos.first, start_pos.second);
+
+
     makeRobot();
-    makeBall();
+//    makeBall();
     makeObstacle();
     jointFix();
 
@@ -610,8 +619,15 @@ void odeInitialize(){
     odometry->setVarianceParam(alpha[0], alpha[1], alpha[2], alpha[3]);
 
     particleImg = new RenderArea();
+    particleImg->setWindowTitle("particle image");
     particleImg->setStyleSheet("background:rgb(0,0,0)");
-    particleImg->resize(200, 200);
+    particleImg->resize(600, 500);
+
+//    beamTouchImg = new RenderArea();
+//    beamTouchImg->setWindowTitle("touched beam image");
+//    beamTouchImg->setStyleSheet("background:rgb(0,0,0)");
+//    beamTouchImg->resize(600, 500);
+
 
     QPen pen;
     pen.setColor(QColor(255, 255, 255));
@@ -621,6 +637,12 @@ void odeInitialize(){
 
     particleImg->setShape(particleImg->Points);
     particleImg->show();
+
+//    beamTouchImg->setPen(pen);
+
+//    beamTouchImg->setShape(particleImg->Points);
+//    beamTouchImg->show();
+
 
     initMCL(odoData, _vcW, slamMap);
 
@@ -702,7 +724,7 @@ void deadreckoning(dReal& s_x, dReal& s_y, dReal& s_t, int period)
     fy      = 0.5 * WH_R1 * ((omega_r + omega_l) * sin(theta) + (omega_r_old + omega_l_old) * sin(theta_old) );
     ft      = 0.5 * WH_R1/WL* ( (omega_r - omega_l) + (omega_r_old - omega_l_old) );
 
-    s_x    += fx * sim_step * period * 0.5;
+    s_x    += fx * sim_step * period  * 0.5;
     s_y    += fy * sim_step * period  * 0.5;
     s_t    += ft * sim_step * period  * 0.5;
 
@@ -728,23 +750,31 @@ void simLoop(int pause)
     if(controlFlag){
         SimultaneousPC();
 
-        if(mclStep++ % 5 == 0){
+        if(mclStep++ % 10 == 0){
 
             OPoint deadPose;
 
             deadPose.x = 0, deadPose.y = 0, deadPose.theta = 0;     // for deadreckoning
 
             //바퀴가 얼마나 굴러갔을지 추정
-            deadreckoning(deadPose.x, deadPose.y, deadPose.theta, 5);
+            deadreckoning(deadPose.x, deadPose.y, deadPose.theta, 10);
 
             //위의 좌표에 노이즈를 만들어줌
             odometry->Prediction(deadPose.x, deadPose.y, deadPose.theta);
 
-            //노이즈가 추가된 움직인 값을 파티클에 더해줌
+            //노이즈가 추가된 움직인 값을 파티클에 더해줌 - 노이즈낀 값이 밖으로 나가버렸으면 노이즈 안준값으로 바꾸기(resampleing에서 다시 뿌려주는 것으로 소스 수정함)
             for(unsigned int i=0; i< odoData.size(); i++){
-                odoData[i].x += odometry->odoPoints[i].x;
-                odoData[i].y += odometry->odoPoints[i].y;
-                odoData[i].theta += odometry->odoPoints[i].theta;
+                odoData[i].x        += odometry->odoPoints[i].x;
+
+//                if(odoData[i].x <0 || odoData[i].x > MAPSIZE)
+//                    odoData[i].x        -= odometry->odoPoints[i].x;
+
+                odoData[i].y        += odometry->odoPoints[i].y;
+
+//                if(odoData[i].y <0 || odoData[i].y > MAPSIZE)
+//                    odoData[i].y        -= odometry->odoPoints[i].y;
+
+                odoData[i].theta    += odometry->odoPoints[i].theta;
                 odoData[i].theta    += (odoData[i].theta < -_PI ? _2PI : odoData[i].theta > _PI ? -_2PI : 0);
             }
 
@@ -757,11 +787,11 @@ void simLoop(int pause)
             QPolygonF main_Polygon;
             particleImg->polygon.clear();
 
-            for(int i=0; i< odoData.size(); i++){
-                q_Polygon << QPoint(odoData[i].x/GRIDSIZE, (MAPSIZE-odoData[i].y)/GRIDSIZE);
+            for(unsigned int i=0; i< odoData.size(); i++){
+                q_Polygon << QPoint(odoData[i].x/GRIDSIZE * 3, (MAPSIZE-odoData[i].y)/GRIDSIZE * 2.5);
             }
 
-            main_Polygon << QPoint(_oPose.x/GRIDSIZE, (MAPSIZE-_oPose.y)/GRIDSIZE);
+            main_Polygon << QPoint(_oPose.x/GRIDSIZE * 3, (MAPSIZE-_oPose.y)/GRIDSIZE * 2.5);
             particleImg->polygon = q_Polygon;
             particleImg->polygon2 = main_Polygon;
             particleImg->update();
@@ -781,48 +811,14 @@ void simLoop(int pause)
 
   }
 
-  drawBall();
+//  drawBall();
   drawRobot();
   drawObstacle();
 }
 
-void setDrawStuff() {
-  fn.version = DS_VERSION;
-  fn.start   = &start;
-  fn.step    = &simLoop;
-  fn.command = &command;
-  fn.path_to_textures = "c:/ode-0.13/drawstuff/textures";
-}
-
-
-void jointFix(){
-
-    // 고정 Joint 생성
-    for(int l = 0; l<12; ++l){
-        ObsJointID[l] = dJointCreateFixed(world, 0);
-    }
-
-    // body1 과 body2 를 결합 -> 둘중 하나가 0이면 world와 결합한다.
-    //obBarrier[4], obBox[5], obCylinder[2];
-    for(int i = 0; i < 4; ++i){
-        dJointAttach(ObsJointID[i] , obBarrier[i].body, 0);
-    }
-    for(int j = 0; j < 5; ++j){
-        dJointAttach(ObsJointID[4 + j] , obBox[j].body, 0);
-    }
-    for(int j = 0; j < 2; ++j){
-        dJointAttach(ObsJointID[9 + j] , obCylinder[j].body, 0);
-    }
-    dJointAttach(ObsJointID[11] , ball.body, 0);
-
-    // 지정된 Joint 를 고정
-    for(int k=0; k < 12; ++k){
-        dJointSetFixed(ObsJointID[k]);
-    }
-}
-
 void initMCL(OPoints &vcChi, vector<double> &vcW, const KImageGray &igMap)
 {
+
     OPoint oPose;
 
     vcChi.clear();
@@ -847,32 +843,34 @@ void initMCL(OPoints &vcChi, vector<double> &vcW, const KImageGray &igMap)
     LFD->Execute(BACKGROUND, FOURWAY, 1, 5, 10);
     LFD->likeLihood_field_range_finder_model();
 
-//    for(int r=0; r <LFD->_LHFMap.Row(); r++){
-//        for(int c=0; c <LFD->_LHFMap.Col(); c++){
-//            printf("x : %d, y : %d, value : %f",c,r, LFD->_LHFMap._ppA[r][c]);
-//        }
-//        printf("\n");
-//    }
+#if 0
+    for(int r=0; r <LFD->_LHFMap.Row(); r++){
+        for(int c=0; c <LFD->_LHFMap.Col(); c++){
+            printf("x : %d, y : %d, value : %f",c,r, LFD->_LHFMap._ppA[r][c]);
+        }
+        printf("\n");
+    }
 
-//    int count = 0;
-//    for(int r=0; r < LFD->_LHFMap.Row(); r++){
-//        for(int c=0; c <LFD->_LHFMap.Col(); c++){
-//            if(count % 10 == 0){
-//                printf("||");
-//            }
-//            printf("%d ",LFD->_LHFMap._ppA[r][c]);
-//            count++;
-//        }
-//        count = 0;
-//        printf("\n");
-//    }
+    int count = 0;
+    for(int r=0; r < LFD->_LHFMap.Row(); r++){
+        for(int c=0; c <LFD->_LHFMap.Col(); c++){
+            if(count % 10 == 0){
+                printf("||");
+            }
+            printf("%d ",LFD->_LHFMap._ppA[r][c]);
+            count++;
+        }
+        count = 0;
+        printf("\n");
+    }
+#endif
 
 
     QPolygonF q_Polygon;
     particleImg->polygon.clear();
 
-    for(int i=0; i< vcChi.size(); i++){
-        q_Polygon << QPoint(vcChi[i].x/GRIDSIZE, (MAPSIZE-vcChi[i].y)/GRIDSIZE);
+    for(unsigned int i=0; i< vcChi.size(); i++){
+        q_Polygon << QPoint(vcChi[i].x/GRIDSIZE * 3, (MAPSIZE-vcChi[i].y)/GRIDSIZE * 2.5);
     }
     particleImg->polygon = q_Polygon;
     particleImg->update();
@@ -883,47 +881,38 @@ void initMCL(OPoints &vcChi, vector<double> &vcW, const KImageGray &igMap)
 void measurementMCL()
 {
     double dX, dY, dWt, dW, dSum = 0., dMax = 0.;
+    int rayX, rayY;
     _vcW.clear();
 
 
-//    int count = 0;
-//    for(int r=0; r < LFD->_LHFMap.Row(); r++){
-//        for(int c=0; c <LFD->_LHFMap.Col(); c++){
-//            printf("%d ",LFD->_LHFMap._ppA[r][c]);
-//            if(count % 10 == 0){
-//                printf("||");
-//            }
-//            count++;
-//        }
-//        count = 0;
-//        printf("\n");
-//    }
-
 
 //    QPolygonF q_Polygon;
-//    particleImg->polygon.clear();
+//    beamTouchImg->polygon.clear();
 
     for(auto& particle : odoData){
         //likelihood 쓰는 부분
         dWt = 1.;
         for(auto& beam : _oLidar2D){
-//            cout <<"beam length : " << beam.second->_dRange << endl;
             if(!(beam.second->Fail())){
                 beam.second->End(particle, dX, dY);
-                dW  = LFD->_LHFMap._ppA[(int)((MAPSIZE-dY)/GRIDSIZE)][(int)(dX/GRIDSIZE)];
 
-//                cout << "dx : " << (int)(dX/GRIDSIZE) << ", dy : " << (int)(MAPSIZE-dY)/GRIDSIZE << ", dw : " << dW << endl;;
+                rayX = dX/GRIDSIZE;
+                rayY = (MAPSIZE-dY)/GRIDSIZE;
+                if(dX < 0 || dX > MAPSIZE || dY < 0 || dY > MAPSIZE)
+                {
+                    dW = 1;
+                }
+                else{
+                    dW  = (float)LFD->_LHFMap._ppA[rayY][rayX] * 1e-2; // overflow가 일어나지 않도록 값을 작게 만듬
+                }
 
-//                q_Polygon << QPoint(dX/GRIDSIZE, (MAPSIZE - dY)/GRIDSIZE);
+//                q_Polygon << QPoint(dX/GRIDSIZE*3, (MAPSIZE - dY)/GRIDSIZE*2.5);
 
-
-//                cout << dW << endl;
                 dWt *= dW;
             }
         }
-//        cout << "================================" << endl;
 
-        //대표 particle 선택
+        //대표 particle 선택(빨간색 점으로 표현함)
         if(dWt > dMax){
 
             dMax    = dWt;
@@ -934,10 +923,9 @@ void measurementMCL()
         _vcW.push_back(dWt);
     }
 
-//    particleImg->polygon = q_Polygon;
-//    particleImg->update();
+//    beamTouchImg->polygon = q_Polygon;
+//    beamTouchImg->update();
 
-//    cout << "dSum: " << dSum << endl;
     for(auto& weight : _vcW)
         weight /= dSum;
 }
@@ -948,7 +936,7 @@ void resamplingMCL()
     resample_step++;
 
     //로컬 미니멈에 빠지지 않도록 초기 리셈플링 ㄱㄱ
-    if(resample_step % 500 == 0){
+    if(resample_step % 100 == 0){
 
         OPoint oPose;
 
@@ -970,17 +958,12 @@ void resamplingMCL()
     else{
         for(unsigned int i=1; i<_vcW.size(); i++){
             _vcW[i] += _vcW[i-1];
-    //        cout << "i :" << i <<"weight_sum: " << _vcW[i]  <<endl;
         }
 
 
         OPoints vcChiold;
 
         vcChiold.assign(odoData.begin(), odoData.end());
-
-    //    for(int i=0; i< vcChiold.size(); i++){
-    //        cout << "i :" << i <<"x: " << vcChiold[i].x << "y: " << vcChiold[i].y << "theta: " << vcChiold[i].theta << endl;
-    //    }
 
         double  dRand;
         int     nSel;
@@ -997,9 +980,8 @@ void resamplingMCL()
                     break;
                 }
             }
-    //        cout << "x: " << vcChiold[nSel].x << "y: " << vcChiold[nSel].y << "theta: " << vcChiold[nSel].theta << endl;
 
-            //만약 particle이 범위를 벗어나면 다시 뿌려줌
+            // 만약 particle이 범위를 벗어나면 다시 뿌려줌
             if(vcChiold[nSel].x < 0 || vcChiold[nSel].x > MAPSIZE || vcChiold[nSel].y < 0 || vcChiold[nSel].y > MAPSIZE ){
 
                 OPoint oPose;
@@ -1015,7 +997,40 @@ void resamplingMCL()
                 odoData.push_back(vcChiold[nSel]);
             }
 
-    //        printf("i : %d, nSel : %d\n",i , nSel);
         }
+    }
+}
+
+void setDrawStuff() {
+  fn.version = DS_VERSION;
+  fn.start   = &start;
+  fn.step    = &simLoop;
+  fn.command = &command;
+  fn.path_to_textures = "c:/ode-0.13/drawstuff/textures";
+}
+
+
+void jointFix(){
+
+    // 고정 Joint 생성
+    for(int l = 0; l<12; ++l){
+        ObsJointID[l] = dJointCreateFixed(world, 0);
+    }
+
+    // body1 과 body2 를 결합 -> 둘중 하나가 0이면 world와 결합한다.
+    for(int i = 0; i < 4; ++i){
+        dJointAttach(ObsJointID[i] , obBarrier[i].body, 0);
+    }
+    for(int j = 0; j < 5; ++j){
+        dJointAttach(ObsJointID[4 + j] , obBox[j].body, 0);
+    }
+    for(int j = 0; j < 2; ++j){
+        dJointAttach(ObsJointID[9 + j] , obCylinder[j].body, 0);
+    }
+    dJointAttach(ObsJointID[11] , ball.body, 0);
+
+    // 지정된 Joint 를 고정
+    for(int k=0; k < 12; ++k){
+        dJointSetFixed(ObsJointID[k]);
     }
 }

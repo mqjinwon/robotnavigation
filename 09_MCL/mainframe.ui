@@ -652,7 +652,7 @@
           </rect>
          </property>
          <property name="plainText">
-          <string>10</string>
+          <string>1</string>
          </property>
         </widget>
         <widget class="QPlainTextEdit" name="repulParam">
@@ -665,7 +665,7 @@
           </rect>
          </property>
          <property name="plainText">
-          <string>1</string>
+          <string>0.1</string>
          </property>
         </widget>
         <widget class="QPlainTextEdit" name="repulNearParam">
@@ -808,7 +808,7 @@
           </rect>
          </property>
          <property name="text">
-          <string>0.0001</string>
+          <string>0.0003</string>
          </property>
         </widget>
         <widget class="QLineEdit" name="alText2">
@@ -821,7 +821,7 @@
           </rect>
          </property>
          <property name="text">
-          <string>0.0003</string>
+          <string>0.0009</string>
          </property>
         </widget>
         <widget class="QLineEdit" name="alText4">
@@ -834,7 +834,7 @@
           </rect>
          </property>
          <property name="text">
-          <string>0.001</string>
+          <string>0.003</string>
          </property>
         </widget>
         <widget class="QLineEdit" name="alText3">
@@ -847,7 +847,7 @@
           </rect>
          </property>
          <property name="text">
-          <string>0.001</string>
+          <string>0.003</string>
          </property>
         </widget>
        </widget>

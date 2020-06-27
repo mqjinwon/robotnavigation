@@ -630,8 +630,10 @@ void MainFrame::on_PotentialField_clicked(){
 
         //first : X, second : Y
         //ode에 최종 목표 위치를 알려줌(pixel기준) -- 좌표계 변환을 할때, ode->qt로 통일 해야할지 섞어도 될지 고민...
-        target_pos.first    = endPos.first * 0.05;
-        target_pos.second   = (PTF->height() - endPos.second) * 0.05;
+        start_pos.first    = startPos.first;
+        start_pos.second   = (PTF->height() - startPos.second);
+        target_pos.first    = endPos.first;
+        target_pos.second   = (PTF->height() - endPos.second);
 
         int border = 10;
         int sizeUp = 4; // 이미지를 크게 보기 위해서 사용

@@ -96,16 +96,18 @@ void KSensorBeam::Draw()
 void KSensorBeam::End(OPoint &_particle, double &_nX, double &_nY)
 {
     double		dLength;
-    double		dpStart[2], dpEnd[2];
+    double		dpEnd[2];
     dVector3	vOri, vDir;
 
     dGeomRayGet(_hGeom, vOri, vDir);
     dLength = std::min(_oInfo.dMaxLength, _dRange);
 
-    dpStart[0]	= vOri[0];
-    dpStart[1]	= vOri[1];
-    dpEnd[0]	= vOri[0] + vDir[0] * dLength;
-    dpEnd[1]	= vOri[1] + vDir[1] * dLength;
+//    dpEnd[0]	= vOri[0] + vDir[0] * dLength;
+//    dpEnd[1]	= vOri[1] + vDir[1] * dLength;
+
+
+    dpEnd[0]	= _particle.x + vDir[0] * dLength;
+    dpEnd[1]	= _particle.y + vDir[1] * dLength;
 
     _nX = dpEnd[0];
     _nY = dpEnd[1];
@@ -136,7 +138,7 @@ void KSensorLidar2D::Create(KSENSORLIDAR2D_INFO& oInfo,dWorldID world, dSpaceID 
     oBeamInfo.eTYPE		    = _AXIS_ANGLE;
 
     //beam은 Z축을 기준으로 생성되어 있다. 이를 y축으로 회전 시켜서 사용한다.
-    for(int deg = oInfo.nLoRange; deg <= oInfo.nHiRange; deg += 3)
+    for(int deg = oInfo.nLoRange; deg <= oInfo.nHiRange; deg += 5)
 	{
         sprintf(oBeamInfo.szID, "Beam_(%d)", deg);
 
